@@ -1,4 +1,4 @@
-# cnn XOR 用cnn来训练一个异或门
+# cnn XOR --- 用cnn来训练一个异或门
 
 这里通过训练实现一个异或门model
 异或就不用说了
@@ -109,9 +109,68 @@ print(data)
 
     在这个数据少的情况下,感觉训练量比交叉检验要重要，
     毕竟像[v1](#v1)情况下，根本没必要交叉验证。
+
+4. 各个activations 的测试
+
+	目前官方的  activations 有如下几种，
+	
+	```python 
+   actives = ['softmax','softplus','softsign','relu','tanh','sigmoid','hard_sigmoid','linear']
+   ```
+   来了一个内积，对每两对来测了同条件下5次训练的模型的评估score，代码：
+   
+   ```python
+   actives = ['softmax','softplus','softsign','relu','tanh','sigmoid','hard_sigmoid','linear']
+    result = []
+    for A,B in product(actives,actives):
+        s = 0
+        for i in range(5):
+            model = train(data,label,A,B)
+            score = model.evaluate(data,label,batch_size=10,verbose=0)
+            print(A,B,score)
+            #test
+            classes = model.predict_classes(_data)
+            print(classes)
+            s += score
+        result.append((s,A,B))
     
-4. 各个acitve 的测试
-   选定了多个 acitve 的 product 来测试同一情况下的evalute 的score
+    result = sorted(result,key=itemgetter(0))
+   ```
+   
+   最后[结果](./result.sort)前几名和后几名是
+   
+   ```
+softplus hard_sigmoid 0.00892226
+tanh softmax 0.0127462
+softplus softmax 0.0133235
+tanh softplus 0.0149227
+softsign softmax 0.0268711
+softmax softmax 0.0287166
+.................
+.................
+relu relu 37.9949
+tanh relu 38.0169
+softplus relu 39.513
+linear relu 40.0097
+softsign relu 40.0756
+linear tanh 40.2074
+sigmoid relu 40.2074
+hard_sigmoid relu 40.2513
+relu tanh 40.2952
+   ```
+   最后选了一个 `tanh softmax`
+   
+## 一些体会
 
+  - 数据是**第一重要**的，越多越好，训练不够很难预测，因为模型要见多识广呀，
+      
+    训练数据不要集中，要分散一些，
+  - 层数跟输出层还是要根据问题复杂度来设，尽量不能少，也别多
+  - 参数配置要思考，有些前后是有联系的
+  - 有些设置是铁定不会收敛的，所以多尝试不同参数
+  - numpy是个好东西，各种api和切片要小心。
 
-## 体会
+## TODO
+  - 想玩GUP和更复杂的问题
+  - 多学内置参数，及其适用范围，就是看文档
+  - 学numpy的更多细节，就是看文档
