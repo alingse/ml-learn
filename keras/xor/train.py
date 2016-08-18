@@ -28,9 +28,10 @@ def load_data():
     _label = np.array([0,1,1,0])
     
     #解决数量太少训练不出来
-    data = np.repeat(_data,2,axis=0)
-    label = np.repeat(_label,2,axis=0)
+    data = np.repeat(_data,20,axis=0)
+    label = np.repeat(_label,20,axis=0)
 
+    #太少shuffle 也不能解决数据训练不足的
     #shuffle 避免repeat 数据集中重复
     index = list(range(len(label)))
     shuffle(index)
@@ -61,10 +62,10 @@ def train(data,label,activeA='tanh',activeB='softmax'):
     #次数太少，不容易迭代进去
     #validation_split 要合理，不能减少训练量。
     #虽然如此，但是每次训练还是有随机性。
-    model.fit(data, label, batch_size=1,
-                        nb_epoch=1000,shuffle=True,
+    model.fit(data, label, batch_size=10,
+                        nb_epoch=200,shuffle=True,
                         verbose=1,
-                        validation_split=0.0)
+                        validation_split=0.2)
 
     return model
 
@@ -87,6 +88,7 @@ def main(name='test'):
     print(score)
     classes = model.predict_classes(_data)
     print(classes)
+    dump(model,name)
     #
     '''
     actives = ['softmax','softplus','softsign','relu','tanh','sigmoid','hard_sigmoid','linear']
