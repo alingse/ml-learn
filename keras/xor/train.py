@@ -2,7 +2,6 @@
 #author@alingse
 #2016.08.17
 
-#learn form https://github.com/wepe
 
 from __future__ import absolute_import
 from __future__ import print_function
@@ -22,6 +21,7 @@ from random import shuffle
 from itertools import product
 from operator import itemgetter
 
+
 def load_data():
     #xor
     _data = np.array([[0,0],[0,1],[1,0],[1,1]])
@@ -39,18 +39,19 @@ def load_data():
 
     return data,label
 
-def train(data,label):
+
+def train(data,label,activeA='tanh',activeB='softmax'):
     model = Sequential()
     #因为 A ^ B == (~ A & B)|(A & ~ B)
     #神经元个数自然是越多越好，不能太少。
     #这里 32 就比 4 收敛的快
     #好的 init 也很重要
     #有些是永远不会收敛的，要有智慧
-    #softmax\linear\softplus\softsign
+    #tanh--softmax
     model.add(Dense(4,input_dim=2,init='normal'))
-    model.add(Activation('tanh'))
+    model.add(Activation(activeA))
     model.add(Dense(2,input_dim=4))
-    model.add(Activation('softmax'))
+    model.add(Activation(activeB))
 
     sgd = SGD(lr=0.05, decay=1e-6, momentum=0.9, nesterov=True)
     #loss 要有针对性，能衡量东西才行。
@@ -62,29 +63,51 @@ def train(data,label):
     #虽然如此，但是每次训练还是有随机性。
     model.fit(data, label, batch_size=5,
                         nb_epoch=100,shuffle=True,
-                        verbose=2,
+                        verbose=0,
                         validation_split=0.2)
 
     return model
+
 
 def dump(model,save_name):
     with open('{}.model.json'.format(save_name),'w') as f:
         f.write(model.to_json())
     model.save_weights('{}.model.weigthts.h5'.format(save_name))
 
+
 def main(name='test'):
     #data
+    _data = np.array([[0,0],[0,1],[1,0],[1,1]])
+
     data,label = load_data()
     label = np_utils.to_categorical(label)
     
     model = train(data,label)
-    
-    score = model.evaluate(data,label,batch_size=10,verbose=0)
+    score = model.evaluate(data,label,batch_size=10,verbose=2)
     print(score)
-    _data = np.array([[0,0],[0,1],[1,0],[1,1]])
     classes = model.predict_classes(_data)
     print(classes)
-    dump(model,name)
+    #
+    '''
+    actives = ['softmax','softplus','softsign','relu','tanh','sigmoid','hard_sigmoid','linear']
+    result = []
+
+    for A,B in product(actives,actives):
+        s = 0
+        for i in range(5):
+            model = train(data,label,A,B)
+            score = model.evaluate(data,label,batch_size=10,verbose=0)
+            print(A,B,score)
+            #test
+            classes = model.predict_classes(_data)
+            print(classes)
+            s += score
+        result.append((s,A,B))
+    
+    result = sorted(result,key=itemgetter(0))
+    print(result)
+    '''
+
 
 if __name__ == '__main__':
     name = 'xor'
