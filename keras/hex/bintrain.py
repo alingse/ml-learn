@@ -1,79 +1,77 @@
+
 #coding=utf-8
 #author@alingse
 #2016.08.19
 
 from keras.models import Sequential
-from keras.layers.core import Dense, Dropout, Activation, Flatten,RepeatVector
+from keras.layers import Dense
+from keras.layers import Dropout, Activation, Flatten,RepeatVector
+from keras.layers import Embedding
+from keras.layers import LSTM
+
 from keras.optimizers import SGD, Adadelta, Adagrad,RMSprop
 from keras.utils import np_utils, generic_utils
 
 import numpy as np
 from random import shuffle
+from random import choice
 
 
 #0 --> 255
 #0b0 --> 0b11111111
-def load_data(binlen = 8):
+#seq
+def load_XY(binlen = 8):
     maxnum = eval('0b'+'1'*binlen)
     numlen = len(str(maxnum))
 
     count = maxnum + 1
 
-    data = np.zeros((count,numlen),dtype=np.uint8)
-    label = np.zeros((count,binlen),dtype=np.uint8)
+    X_train = np.zeros((count,numlen),dtype=np.uint8)
+    Y_train = np.zeros((count,binlen),dtype=np.uint8)
     for i in range(count):
 
-        _i_str = str(i).zfill(numlen)
-        _i_data = np.array(map(int,_i_str))
-        _i_bin = bin(i)[2:].zfill(binlen)
-        _i_label = np.array(map(int,_i_bin))
+        i_str = str(i).zfill(numlen)
+        x_seq = np.array(map(int,i_str))
+        i_bin = bin(i)[2:].zfill(binlen)
+        y_seq = np.array(map(int,i_bin))
 
-        data[i,:] = _i_data
-        label[i,:] = _i_label
+        X_train[i] = x_seq
+        Y_train[i] = y_seq
 
+    X_train = np.repeat(X_train,20,axis=0)
+    Y_train = np.repeat(Y_train,20,axis=0)
 
-    #解决数量太少训练不出来
-    data = np.repeat(data,20,axis=0)
-    label = np.repeat(label,20,axis=0)
-
-    #太少shuffle 也不能解决数据训练不足的
-    #shuffle 避免repeat 数据集中重复
-    index = list(range(len(label)))
+    index = list(range(X_train.shape[0]))
     shuffle(index)
-    data = data[index]
-    label = label[index]
-
-    return data,label
-
-
-def train(data,label):
+    X_train = X_train[index]
+    Y_train = Y_train[index]
     
-    numlen = data.shape[1]
-    #3
-    binlen = label.shape[2]
-    #8
+    return X_train,Y_train
 
+
+def train(X_train,Y_train):
+
+    numlen = X_train.shape[1]
+    binlen = Y_train.shape[1]
+    print(numlen,binlen)
+
+    #copy from keras
     model = Sequential()
 
-    model.add(Dense(binlen,input_dim=numlen,init='normal'))
-    model.add(Activation('tanh'))
-    model.add(Dense(binlen,input_dim=binlen))
-    model.add(Activation('softmax'))
-    for i in range(binlen-2):
-        model.add(Dense(binlen,input_dim=binlen))
-        model.add(Activation('tanh'))
-        model.add(Dense(binlen,input_dim=binlen))
-        model.add(Activation('softmax'))
+    model.add(Dense(4*binlen,input_dim=numlen,activation='tanh',init='normal'))
+    model.add(Dense(2*binlen,input_dim=4*binlen,activation='softmax'))
+    model.add(Dense(binlen,input_dim=2*binlen,activation='tanh'))
+    model.add(Dense(binlen,input_dim=binlen,activation='softmax'))
 
-    sgd = SGD(lr=0.05, decay=1e-6, momentum=0.9, nesterov=True)
-    #损失函数还不知道选啥
-    model.compile(loss='binary_crossentropy',optimizer=sgd)
-    #model.compile(loss='mse', optimizer='adam')
+    model.compile(loss='binary_crossentropy',
+                  optimizer='rmsprop',
+                  metrics=['accuracy'])
 
-    model.fit(data, label, batch_size=10,
-                        nb_epoch=500,shuffle=True,
-                        verbose=1,
-                        validation_split=0.2)
+    print('start fit')
+    model.fit(X_train, Y_train,
+              batch_size=30, nb_epoch=10000,
+              verbose=2,shuffle=True,
+              validation_split=0.3)
 
     return model
 
@@ -86,19 +84,18 @@ def dump(model,save_name):
 
 def main(name='test'):
     
-    data,label = load_data()
-    label = np_utils.to_categorical(label)
+    X_train,Y_train = load_XY(binlen=2)
     
-    model = train(data,label)
-    score = model.evaluate(data,label,batch_size=4,verbose=2)
+    model = train(X_train,Y_train)
+    score = model.evaluate(X_train,Y_train,batch_size=20,verbose=2)
     print(score)
 
-    _data = np.array([[1,6,5]])
-    classes = model.predict_classes(_data)
-    print(classes)
-    print(bin(165))
+    x_test = np.array([0,1]).reshape(2,1)
+    y_seq = model.predict(x_test)
+    print(y_seq)
+    print(y_seq>0.5)
+    print(bin(13))
     dump(model,name)
-    
     
 
 if __name__ == '__main__':
