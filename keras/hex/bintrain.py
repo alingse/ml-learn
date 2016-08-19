@@ -43,8 +43,8 @@ def load_XY(binlen = 8):
     x_test = X_train
     y_test = Y_train
 
-    X_train = np.repeat(X_train,500,axis=0)
-    Y_train = np.repeat(Y_train,500,axis=0)
+    X_train = np.repeat(X_train,300,axis=0)
+    Y_train = np.repeat(Y_train,300,axis=0)
 
     index = list(range(X_train.shape[0]))
     shuffle(index)
@@ -63,28 +63,37 @@ def train(X_train,Y_train):
     #copy from keras
     model = Sequential()
 
-    #activations = ['softmax','softplus','softsign','relu','tanh','sigmoid','hard_sigmoid','linear']
-    #actives = [choice(activations) for i in range(3)]
+    activations = ['softmax','softplus','softsign','relu','tanh','sigmoid','hard_sigmoid','linear']
+    actives = [choice(activations) for i in range(3)]
 
-    #['sigmoid', 'softsign', 'softsign', 'hard_sigmoid']
-    #['tanh', 'softsign', 'tanh', 'hard_sigmoid']
-    #['tanh', 'tanh', 'sigmoid', 'hard_sigmoid']
-    actives = ['relu', 'tanh', 'tanh']
+    #['softplus', 'softmax', 'tanh']
+    #['relu', 'sigmoid', 'linear']
+    #['relu', 'sigmoid', 'hard_sigmoid']
+    #['sigmoid', 'softmax', 'tanh']
+    #['linear', 'softsign', 'tanh']
+    #['tanh', 'sigmoid', 'softsign']
+    #['hard_sigmoid', 'tanh', 'softsign']
+    #['softplus', 'tanh', 'softsign']
+    #['softplus', 'sigmoid', 'softplus']
+    #actives = ['relu', 'tanh', 'tanh']
+    actives = ['tanh', 'sigmoid', 'softsign']
     print(actives)
 
-    model.add(Dense(2*numlen,input_dim=numlen,activation=actives[0],init='uniform'))
-    model.add(Dense(binlen,input_dim=2*numlen,activation=actives[1]))
-    #model.add(Activation('relu'))
-    model.add(Dense(2*binlen,input_dim=binlen,activation=actives[2]))
+    model.add(Dense(2*binlen,input_dim=numlen,activation=actives[0],init='uniform'))
+    model.add(Dense(4*binlen,input_dim=2*binlen,activation=actives[1],init='normal'))
+    model.add(Dense(2*binlen,input_dim=4*binlen,activation=actives[2]))
     model.add(Dense(binlen,input_dim=2*binlen,activation='hard_sigmoid'))
 
+
+    rmsprop = RMSprop(lr=0.001, rho=0.9, epsilon=1e-08)
+
     model.compile(loss='binary_crossentropy',
-                  optimizer='rmsprop',
+                  optimizer=rmsprop,
                   metrics=['accuracy'])
 
     print('start fit')
     model.fit(X_train, Y_train,
-              batch_size=300, nb_epoch=500*binlen,
+              batch_size=600, nb_epoch=250*binlen,
               verbose=2,shuffle=True,
               validation_split=0.2)
 
@@ -119,8 +128,14 @@ def main(binlen=4,name='test'):
     #x_test = np.array([0,1,2,3]).reshape(4,1)
     #x_test = X_train[1:2**binlen]
 
+
     y_seq = model.predict(x_test)
     y_seq2 = np.float32(y_seq>0.5)
+
+    if np.sum(np.abs(y_seq - y_test)) == 0.0:
+        print(True)
+    #exit()
+
     print(x_test)
     print(y_seq)
     print(y_test)
@@ -128,7 +143,7 @@ def main(binlen=4,name='test'):
     print(y_seq==y_test)
     print(y_seq2==y_test)
     print('diff:sum: |y_seq - y_test|',np.sum(np.abs(y_seq - y_test)))
-    print('diff:sum: |y_seq - y_test|',np.sum(np.abs(y_seq2 - y_test)))
+    print('diff:sum: |y_seq2 - y_test|',np.sum(np.abs(y_seq2 - y_test)))
     dump(model,name)
 
 if __name__ == '__main__':
