@@ -63,8 +63,8 @@ def train(X_train,Y_train):
     #copy from keras
     model = Sequential()
 
-    activations = ['softmax','softplus','softsign','relu','tanh','sigmoid','hard_sigmoid','linear']
-    actives = [choice(activations) for i in range(3)]
+    #activations = ['softmax','softplus','softsign','relu','tanh','sigmoid','hard_sigmoid','linear']
+    #actives = [choice(activations) for i in range(3)]
 
     #['sigmoid', 'softsign', 'softsign', 'hard_sigmoid']
     #['tanh', 'softsign', 'tanh', 'hard_sigmoid']
@@ -84,7 +84,7 @@ def train(X_train,Y_train):
 
     print('start fit')
     model.fit(X_train, Y_train,
-              batch_size=100, nb_epoch=1500,
+              batch_size=300, nb_epoch=500*binlen,
               verbose=2,shuffle=True,
               validation_split=0.2)
 
@@ -97,6 +97,7 @@ def dump(model,save_name):
         f.write(model.to_json())
     model.save_weights('{}.model.weigthts.h5'.format(save_name))
 
+
 def load(name):
     with open('{}.model.json'.format(name),'r') as f:
         model = model_from_json(f.read())
@@ -104,10 +105,8 @@ def load(name):
     return model
 
 
-def main(name='test'):
+def main(binlen=4,name='test'):
 
-    binlen = 4
-    
     X_train,Y_train,x_test,y_test = load_XY(binlen=binlen)
     
     model = train(X_train,Y_train)
@@ -119,14 +118,22 @@ def main(name='test'):
     #x_test = np.array([0,1,2,3,4,5,6,7]).reshape(8,1)
     #x_test = np.array([0,1,2,3]).reshape(4,1)
     #x_test = X_train[1:2**binlen]
+
     y_seq = model.predict(x_test)
+    y_seq2 = np.float32(y_seq>0.5)
     print(x_test)
     print(y_seq)
     print(y_test)
-    print(y_seq==1.0)
+    print(y_seq2)
+    print(y_seq==y_test)
+    print(y_seq2==y_test)
+    print('diff:sum: |y_seq - y_test|',np.sum(np.abs(y_seq - y_test)))
+    print('diff:sum: |y_seq - y_test|',np.sum(np.abs(y_seq2 - y_test)))
     dump(model,name)
-    
 
 if __name__ == '__main__':
     name = 'bin'
-    main(name)
+    binlen = 4
+    if len(sys.argv) == 2:
+        binlen = int(sys.argv[1])
+    main(binlen,name)
