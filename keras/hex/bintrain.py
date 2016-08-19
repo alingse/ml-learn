@@ -38,8 +38,8 @@ def load_XY(binlen = 8):
         X_train[i] = x_seq
         Y_train[i] = y_seq
 
-    X_train = np.repeat(X_train,20,axis=0)
-    Y_train = np.repeat(Y_train,20,axis=0)
+    X_train = np.repeat(X_train,300,axis=0)
+    Y_train = np.repeat(Y_train,300,axis=0)
 
     index = list(range(X_train.shape[0]))
     shuffle(index)
@@ -58,10 +58,20 @@ def train(X_train,Y_train):
     #copy from keras
     model = Sequential()
 
-    model.add(Dense(4*binlen,input_dim=numlen,activation='tanh',init='normal'))
-    model.add(Dense(2*binlen,input_dim=4*binlen,activation='softmax'))
-    model.add(Dense(binlen,input_dim=2*binlen,activation='tanh'))
-    model.add(Dense(binlen,input_dim=binlen,activation='softmax'))
+    activations = ['softmax','softplus','softsign','relu','tanh','sigmoid','hard_sigmoid','linear']
+    actives = [choice(activations) for i in range(3)]
+
+    #['sigmoid', 'softsign', 'softsign', 'hard_sigmoid']
+    #['tanh', 'softsign', 'tanh', 'hard_sigmoid']
+    #['tanh', 'tanh', 'sigmoid', 'hard_sigmoid']
+    actives = ['relu', 'tanh', 'tanh']
+    print(actives)
+
+    model.add(Dense(2*numlen,input_dim=numlen,activation=actives[0],init='uniform'))
+    model.add(Dense(binlen,input_dim=2*numlen,activation=actives[1]))
+    #model.add(Activation('relu'))
+    model.add(Dense(2*binlen,input_dim=binlen,activation=actives[2]))
+    model.add(Dense(binlen,input_dim=2*binlen,activation='hard_sigmoid'))
 
     model.compile(loss='binary_crossentropy',
                   optimizer='rmsprop',
@@ -69,10 +79,11 @@ def train(X_train,Y_train):
 
     print('start fit')
     model.fit(X_train, Y_train,
-              batch_size=30, nb_epoch=10000,
+              batch_size=100, nb_epoch=3000,
               verbose=2,shuffle=True,
-              validation_split=0.3)
+              validation_split=0.2)
 
+    print(actives)
     return model
 
 
@@ -84,16 +95,17 @@ def dump(model,save_name):
 
 def main(name='test'):
     
-    X_train,Y_train = load_XY(binlen=2)
+    X_train,Y_train = load_XY(binlen=3)
     
     model = train(X_train,Y_train)
     score = model.evaluate(X_train,Y_train,batch_size=20,verbose=2)
     print(score)
 
-    x_test = np.array([0,1]).reshape(2,1)
+    #x_test = np.array([0,5,0,6,0,7,1,6]).reshape(4,2)
+    x_test = np.array([3,5,6,7]).reshape(4,1)
     y_seq = model.predict(x_test)
     print(y_seq)
-    print(y_seq>0.5)
+    print(y_seq==1.0)
     print(bin(13))
     dump(model,name)
     
