@@ -7,6 +7,7 @@
 
  - 图像种类识别 [keras/image_class](./keras/image_class) 
  - 异或门 [keras/xor](./keras/xor)
+ - 进制转换 [/keras/hex](./keras/hex)
 
 ## to-learn
 
