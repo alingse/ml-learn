@@ -69,7 +69,7 @@ def train(X_train,Y_train,actives):
     model.add(Dense(2*binlen,input_dim=4*binlen,activation=actives[2]))
     model.add(Dense(binlen,input_dim=2*binlen,activation='hard_sigmoid'))
 
-    rmsprop = RMSprop(lr=0.005, rho=0.9, epsilon=1e-08)
+    rmsprop = RMSprop(lr=0.004, rho=0.9, epsilon=1e-08)
 
     model.compile(loss='binary_crossentropy',
                   optimizer=rmsprop,
