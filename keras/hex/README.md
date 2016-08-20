@@ -28,41 +28,49 @@
 
 ## 过程
 
-  1. 根据上面 猜测的2，先训练一个二进制吧
-     1. 准备数据
-        根据输出个数`binlen`，确定各个的序列长度
-        
-        ```python
-        def load_XY(binlen = 8):
-            maxnum = eval('0b'+'1'*binlen)
-            numlen = len(str(maxnum))
+一些思考的过程参考[一些思考纪录：THINK.LOG.md](./THINK.LOG.md)
 
-            count = maxnum + 1
-
-            X_train = np.zeros((count,numlen),dtype=np.uint8)
-            Y_train = np.zeros((count,binlen),dtype=np.uint8)
-            for i in range(count):
-
-                i_str = str(i).zfill(numlen)
-                x_seq = np.array(map(int,i_str))
-                i_bin = bin(i)[2:].zfill(binlen)
-                y_seq = np.array(map(int,i_bin))
-
-                X_train[i] = x_seq
-                Y_train[i] = y_seq
-
-        ```
-        比如 13 --> x = [0,0,1,3] , y = [0,0,0,0,1,1,0,1] 
-        左端用0补齐
-        
-     2. 选什么模型
-        1. rnn
-        
-          因为是输入输出两个序列 ，如果按照时间来看，就是一维的数据依次输入，
-          修改了`load_XY`(参考，[rnnbintrain.py](./rnnbintrain.py)) 使之形成序列
-          但是这个没有训练出来，不懂为啥。（还要提高姿势水平才行，，，）
-          
-        2. cnn 
+## model
  
-           测试了 binlen ＝ 1，2 时候，准备稳步推进训练
-  2. 其他
+  模型结果，基本就是四层结构，加上不同的activation
+  
+  ```python
+    model.add(Dense(2*binlen,input_dim=numlen,activation=actives[0],init='uniform'))
+    model.add(Dense(4*binlen,input_dim=2*binlen,activation=actives[1],init='normal'))
+    model.add(Dense(2*binlen,input_dim=4*binlen,activation=actives[2]))
+    model.add(Dense(binlen,input_dim=2*binlen,activation='hard_sigmoid'))
+
+  ```
+  
+  
+  输入输出个数是这样 `numlen -> 2*binlen -> 4*binlen -> 2*binlen -> binlen`
+  
+  常见的activations 组合是这样
+  
+   ```python
+  #['softplus', 'tanh', 'softsign']
+  #['relu', 'softmax', 'tanh']
+  #['relu', 'tanh', 'softsign']
+  #['linear', 'tanh', 'linear']
+  #['tanh', 'sigmoid', 'softsign']
+   ```
+  
+  现在训练出了3-4-5-6-7-8 的模型，可以很好的转换，
+   
+  转换方式是15 --> [1,5] 然后根据位数左端补齐
+
+  变成[0,1,5] 输入模型，会得到 [0,0,0,0,1,1,1,1］ 即对应的0b1111
+  
+
+### TODO
+#### 思考：
+
+-  分割数据，做出有预测功能的2进制转换（好像不太可能，只要你是cnn就没办法超出自身的界限吧）
+-  如果可以，有没有可能是像做出加法器减法器那样的模型，然后再级联，再做成hex`？
+-  是否要用到rnn？（明明感觉序列的还不错呢）
+
+#### real-todo：
+- 调整训练策略，想办法快一点，不管是操作数据还是操作训练，多多学习
+- 有可能还要改模型结构，看有没有办法做出序列化的东西
+
+Thanks.
