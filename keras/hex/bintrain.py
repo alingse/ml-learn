@@ -104,22 +104,23 @@ def main(binlen=4,name='test',need_train=True,test_active=True):
             #['linear', 'hard_sigmoid', 'softsign']
             #['hard_sigmoid', 'tanh', 'softsign']        
             #['softplus', 'sigmoid', 'softplus']
-            #['softplus', 'softmax', 'tanh']
             #['softplus', 'softsign', 'relu']
             #['softsign', 'softmax', 'softplus']
             #['tanh', 'relu', 'relu']
             #['tanh', 'softmax', 'softmax']
 
             #['softplus', 'tanh', 'softsign']
+            #['softplus', 'softmax', 'tanh']
             #['relu', 'softmax', 'tanh']
             #['relu', 'tanh', 'softsign']
             #['linear', 'tanh', 'linear']
             #['tanh', 'sigmoid', 'softsign']
-            actives = ['tanh', 'sigmoid', 'softsign']
-            actives = ['linear', 'tanh', 'linear']
-            actives = ['relu', 'tanh', 'softsign']
-            actives = ['relu', 'softmax', 'tanh']
-            actives = ['softplus', 'tanh', 'softsign']
+            #actives = ['tanh', 'sigmoid', 'softsign']
+            #actives = ['linear', 'tanh', 'linear']
+            #actives = ['relu', 'tanh', 'softsign']
+            #actives = ['relu', 'softmax', 'tanh']
+            #actives = ['softplus', 'tanh', 'softsign']
+            actives = ['softplus', 'softmax', 'tanh']
 
         #for train
         model = train(X_train,Y_train,actives)
@@ -153,7 +154,7 @@ def main(binlen=4,name='test',need_train=True,test_active=True):
 if __name__ == '__main__':
     need_train = True
     test_active = True
-    #test_active = False
+    test_active = False
 
     #binlen = 4
     binlen = int(sys.argv[1])
